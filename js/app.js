@@ -95,8 +95,6 @@ function applyFilters() {
     renderLabs(result);
 }
 
-filterInputs.forEach(input => input.addEventListener("change", applyFilters));
-searchEl.addEventListener("input", applyFilters);
 const STORAGE_KEY = "labcycle:bookmarks";
 
 // localStorage is user-editable: never trust it. Validate shape, catch errors.
@@ -136,5 +134,9 @@ function paintStar(star, marked) {
     star.classList.toggle("active", marked);
     star.setAttribute("aria-pressed", String(marked));
 }
+
+// Event Listeners
+filterInputs.forEach(input => input.addEventListener("change", applyFilters));
+searchEl.addEventListener("input", applyFilters);
 
 applyFilters(); // first draw
