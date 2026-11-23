@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm 20mm;
+  }
+  @page :right {
+    @bottom-center { content: counter(page); font-size: 9pt; color: #555; }
+  }
+  body {
+    font-family: "Times New Roman", serif;
+    font-size: 12pt;
+    color: #111;
+  }
+  .center { text-align: center; }
+  .right  { text-align: right; }
+  .bold   { font-weight: bold; }
+  .college-name {
+    font-size: 16pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 4px 0;
+    text-align: center;
+  }
+  .record-title {
+    font-size: 20pt;
+    font-weight: bold;
+    margin: 30px 0 24px;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  td, th {
+    border: 1px solid #333;
+    padding: 6px 8px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th { background: #eeeeee; }
+  .page-break { page-break-before: always; }
+  .exp-row-table {
+    width: 100%;
+    border: none;
+  }
+  .exp-row-table td { border: none; padding: 0; }
+  h2 {
+    text-align: center;
+    text-transform: uppercase;
+    font-size: 13pt;
+    margin: 14px 0;
+  }
+  .label {
+    font-weight: bold;
+    margin-top: 12px;
+    margin-bottom: 4px;
+  }
+  pre {
+    font-family: "Courier New", monospace;
+    font-size: 9.5pt;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    border: 1px solid #ccc;
+    padding: 8px;
+    background: #fafafa;
+    margin: 4px 0;
+  }
+  .sign-table {
+    width: 100%;
+    border: none;
+    margin-top: 36px;
+  }
+  .sign-table td { border: none; padding: 0; }
+  img.logo {
+    height: 70px;
+    display: block;
+    margin: 0 auto;
+  }
+  .col30 { width: 30%; }
+</style>
+</head>
+<body>
+
+  {% if logo_path %}
+  <div class="center">
+    <img class="logo" src="file://{{ logo_path }}">
+  </div>
+  {% endif %}
+  <div class="college-name">{{ college.college_name }}</div>
+  {% if college.college_address %}
+  <div class="center">{{ college.college_address }}</div>
+  {% endif %}
+  <div class="record-title">{{ college.record_title }}</div>
+
+  <table>
+    <tr><td class="col30">Name</td><td>{{ student.name }}</td></tr>
+    <tr><td>Roll No</td><td>{{ student.roll_no }}</td></tr>
+    <tr><td>Batch</td><td>{{ student.batch }}</td></tr>
+    <tr><td>Department</td><td>{{ student.department }}</td></tr>
+    <tr><td>Subject</td><td>{{ subject.code }} - {{ subject.name }}</td></tr>
+    <tr><td>Semester</td><td>{{ subject.semester }}</td></tr>
+    <tr><td>Academic Year</td><td>{{ subject.academic_year }}</td></tr>
+  </table>
+
+  <h2 style="margin-top:28px">Index</h2>
+  <table>
+    <tr>
+      <th style="width:12%">Exp No</th>
+      <th style="width:16%">Date</th>
+      <th>Title</th>
+      <th style="width:20%">Teacher Sign</th>
+    </tr>
+    {% for e in entries %}
+    <tr>
+      <td>{{ e.experiment_no }}</td>
+      <td>{{ e.date }}</td>
+      <td>{{ e.title }}</td>
+      <td></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% if college.record_footer %}
+  <p style="margin-top:24px">{{ college.record_footer }}</p>
+  {% endif %}
+
+  {% for e in entries %}
+  <div class="page-break">
+    <table class="exp-row-table">
+      <tr>
+        <td><span class="bold">Experiment No: {{ e.experiment_no }}</span></td>
+        <td class="right"><span class="bold">Date: {{ e.date }}</span></td>
+      </tr>
+    </table>
+    <h2>{{ e.title }}</h2>
+
+    <div class="label">Aim:</div>
+    <div>{{ e.aim }}</div>
+
+    <div class="label">Source Code ({{ e.language }}):</div>
+    <pre>{{ e.code }}</pre>
+
+    {% if e.stdin %}
+    <div class="label">Input:</div>
+    <pre>{{ e.stdin }}</pre>
+    {% endif %}
+
+    <div class="label">Output:</div>
+    <pre>{{ e.output }}</pre>
+
+    <div class="label">Result:</div>
+    <div>{{ e.result }}</div>
+
+    <table class="sign-table">
+      <tr>
+        <td>Approved: {{ e.approved_on }}</td>
+        <td class="right">Teacher signature: ________________</td>
+      </tr>
+    </table>
+  </div>
+  {% endfor %}
+
+</body>
+</html>

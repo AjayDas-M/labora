@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LABORA – Question Portal</title>
+  <meta name="description" content="LABORA Question Portal – manage, approve and download section-wise questions." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ===== CSS RESET & TOKENS ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f1a;
+      --surface: #161929;
+      --surface2: #1e2238;
+      --surface3: #252b45;
+      --border: rgba(255,255,255,0.08);
+      --border-active: rgba(99,102,241,0.5);
+      --text: #e8eaf6;
+      --text-muted: #8891b8;
+      --text-dim: #5a6080;
+      --accent: #6366f1;
+      --accent-hover: #7c7ff7;
+      --accent-glow: rgba(99,102,241,0.25);
+      --success: #10b981;
+      --success-bg: rgba(16,185,129,0.12);
+      --warning: #f59e0b;
+      --warning-bg: rgba(245,158,11,0.12);
+      --danger: #ef4444;
+      --danger-bg: rgba(239,68,68,0.12);
+      --pending: #8b5cf6;
+      --pending-bg: rgba(139,92,246,0.12);
+      --radius: 12px;
+      --radius-sm: 8px;
+      --radius-xs: 6px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.4);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+      --transition: 0.2s ease;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ===== BACKGROUND ORBS ===== */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -200px; left: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -150px; right: -150px;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%);
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px;
+      height: 60px;
+      background: rgba(13,15,26,0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .navbar-brand {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 18px; font-weight: 800; letter-spacing: -0.5px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .navbar-brand .logo-dot {
+      width: 10px; height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--accent);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+    .navbar-info {
+      display: flex; align-items: center; gap: 16px;
+      font-size: 13px; color: var(--text-muted);
+    }
+    .role-badge {
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    .role-badge.teacher { background: rgba(99,102,241,0.2); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.4); }
+    .role-badge.student { background: rgba(16,185,129,0.2); color: #6ee7b7; border: 1px solid rgba(16,185,129,0.4); }
+    .role-badge.admin   { background: rgba(245,158,11,0.2); color: #fcd34d; border: 1px solid rgba(245,158,11,0.4); }
+
+    .btn-logout {
+      background: none; border: 1px solid var(--border);
+      color: var(--text-muted); padding: 5px 14px;
+      border-radius: var(--radius-xs); cursor: pointer;
+      font-size: 12px; font-family: inherit;
+      transition: all var(--transition);
+    }
+    .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* ===== MAIN LAYOUT ===== */
+    .main { max-width: 1200px; margin: 0 auto; padding: 32px 24px; position: relative; z-index: 1; }
+
+    /* ===== LOGIN SCREEN ===== */
+    #login-screen {
+      display: flex; align-items: center; justify-content: center;
+      min-height: calc(100vh - 60px);
+    }
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 40px;
+      width: 100%; max-width: 400px;
+      box-shadow: var(--shadow);
+    }
+    .login-title { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+    .login-subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 32px; }
+
+    /* ===== FORM ELEMENTS ===== */
+    .form-group { margin-bottom: 18px; }
+    .form-label {
+      display: block; font-size: 13px; font-weight: 500;
+      color: var(--text-muted); margin-bottom: 7px;
+    }
+    .form-control {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 14px; font-family: inherit;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+    }
+    .form-control:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    textarea.form-control { resize: vertical; min-height: 80px; }
+
+    /* ===== BUTTONS ===== */
+    .btn {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 9px 18px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer; border: none; outline: none;
+      transition: all var(--transition);
+      white-space: nowrap;
+    }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 4px 12px rgba(99,102,241,0.35);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      box-shadow: 0 6px 20px rgba(99,102,241,0.5);
+      transform: translateY(-1px);
+    }
+    .btn-success {
+      background: var(--success); color: #fff;
+      box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+    }
+    .btn-success:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-danger {
+      background: var(--danger); color: #fff;
+      box-shadow: 0 4px 12px rgba(239,68,68,0.3);
+    }
+    .btn-danger:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-ghost {
+      background: var(--surface3); color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover:not(:disabled) { border-color: var(--border-active); color: var(--text); }
+    .btn-warning {
+      background: var(--warning); color: #000;
+      box-shadow: 0 4px 12px rgba(245,158,11,0.3);
+    }
+    .btn-warning:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-sm { padding: 6px 12px; font-size: 12px; }
+    .btn-xs { padding: 4px 9px; font-size: 11px; border-radius: 6px; }
+    .btn-full { width: 100%; justify-content: center; }
+
+    /* ===== STATUS BADGES ===== */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+    }
+    .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; }
+    .badge-approved  { background: var(--success-bg);  color: var(--success);  border: 1px solid rgba(16,185,129,0.3);  }
+    .badge-approved::before  { background: var(--success); box-shadow: 0 0 6px var(--success); }
+    .badge-rejected  { background: var(--danger-bg);   color: var(--danger);   border: 1px solid rgba(239,68,68,0.3);   }
+    .badge-rejected::before  { background: var(--danger); }
+    .badge-pending   { background: var(--pending-bg);  color: var(--pending);  border: 1px solid rgba(139,92,246,0.3);  }
+    .badge-pending::before   { background: var(--pending); animation: pulse 1.5s infinite; }
+
+    /* ===== PAGE HEADER ===== */
+    .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px; margin-bottom: 28px;
+    }
+    .page-title { font-size: 28px; font-weight: 800; letter-spacing: -0.5px; }
+    .page-subtitle { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+
+    /* ===== SUBJECT SELECTOR ===== */
+    .subject-select-row {
+      display: flex; gap: 12px; align-items: center;
+      margin-bottom: 28px; flex-wrap: wrap;
+    }
+    .subject-select-row label { font-size: 14px; font-weight: 500; color: var(--text-muted); }
+    .subject-select-row select.form-control { max-width: 320px; }
+
+    /* ===== SECTION CARDS ===== */
+    .sections-grid { display: flex; flex-direction: column; gap: 20px; }
+
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .section-card:hover { border-color: var(--border-active); box-shadow: var(--shadow-sm); }
+    .section-card.approved { border-color: rgba(16,185,129,0.3); }
+    .section-card.rejected { border-color: rgba(239,68,68,0.2); }
+
+    .section-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 22px; cursor: pointer; gap: 12px;
+      flex-wrap: wrap;
+      transition: background var(--transition);
+    }
+    .section-header:hover { background: rgba(255,255,255,0.02); }
+
+    .section-header-left { display: flex; align-items: center; gap: 14px; }
+    .section-number {
+      width: 36px; height: 36px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(99,102,241,0.4);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 15px; color: #a5b4fc;
+      flex-shrink: 0;
+    }
+    .section-title-text { font-size: 16px; font-weight: 700; }
+    .section-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+    .section-header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    .collapse-icon {
+      color: var(--text-dim);
+      transition: transform var(--transition);
+      font-size: 18px; line-height: 1;
+    }
+    .section-card.open .collapse-icon { transform: rotate(180deg); }
+
+    .section-body {
+      display: none; padding: 0 22px 20px;
+      border-top: 1px solid var(--border);
+      animation: slideDown 0.2s ease;
+    }
+    @keyframes slideDown { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+    .section-card.open .section-body { display: block; }
+
+    /* ===== SECTION ACTIONS (teacher) ===== */
+    .section-action-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+      padding: 14px 0 18px;
+    }
+    .section-action-bar .left { display: flex; gap: 10px; flex-wrap: wrap; }
+    .section-action-bar .right { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .approval-hint {
+      font-size: 12px; color: var(--text-muted);
+      padding: 6px 12px; border-radius: var(--radius-xs);
+      background: var(--warning-bg); color: var(--warning);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+
+    /* ===== QUESTIONS TABLE ===== */
+    .questions-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+    .questions-table th {
+      text-align: left; font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.5px;
+      color: var(--text-dim); padding: 9px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .questions-table td {
+      padding: 12px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      vertical-align: top;
+      font-size: 13px;
+    }
+    .questions-table tr:last-child td { border-bottom: none; }
+    .questions-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .q-no { font-weight: 700; color: var(--accent); width: 48px; }
+    .q-marks { width: 60px; color: var(--text-muted); text-align: center; }
+    .q-status { width: 100px; }
+    .q-actions { width: 220px; }
+    .q-text { color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+
+    /* student-only: no actions column */
+    .questions-table.student-view .q-actions { display: none; }
+
+    /* ===== ADD QUESTION FORM ===== */
+    .add-question-panel {
+      background: var(--surface2);
+      border: 1px dashed rgba(99,102,241,0.3);
+      border-radius: var(--radius-sm);
+      padding: 18px;
+      margin-top: 16px;
+    }
+    .add-question-panel h4 { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--text-muted); }
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .form-row .form-group { flex: 1; min-width: 120px; }
+
+    /* ===== ADD SECTION FORM ===== */
+    .add-section-panel {
+      background: var(--surface);
+      border: 1px dashed rgba(99,102,241,0.3);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-top: 20px;
+      display: none;
+    }
+    .add-section-panel.visible { display: block; animation: slideDown 0.2s ease; }
+    .add-section-panel h3 { font-size: 16px; font-weight: 700; margin-bottom: 18px; }
+
+    /* ===== DOWNLOAD SECTION (student) ===== */
+    .download-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+      padding: 14px 18px;
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.25);
+      border-radius: var(--radius-sm);
+      margin-top: 16px;
+    }
+    .download-bar .label { font-size: 13px; font-weight: 600; color: var(--success); }
+    .download-bar .label small { display: block; font-size: 11px; font-weight: 400; color: var(--text-muted); }
+    .download-btn-group { display: flex; gap: 10px; }
+
+    /* ===== TOAST ===== */
+    #toast-container {
+      position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+      display: flex; flex-direction: column; gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 18px; border-radius: var(--radius-sm);
+      font-size: 13px; font-weight: 500;
+      backdrop-filter: blur(12px);
+      animation: toastIn 0.3s ease;
+      pointer-events: all;
+      min-width: 260px; max-width: 380px;
+      box-shadow: var(--shadow);
+    }
+    @keyframes toastIn { from{transform:translateX(60px);opacity:0} to{transform:translateX(0);opacity:1} }
+    .toast.success { background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.4); color: var(--success); }
+    .toast.error   { background: rgba(239,68,68,0.15);  border: 1px solid rgba(239,68,68,0.4);  color: var(--danger); }
+    .toast.info    { background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.4); color: #a5b4fc; }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 500;
+      background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.visible { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: 100%; max-width: 480px;
+      box-shadow: var(--shadow);
+      animation: slideDown 0.25s ease;
+    }
+    .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 18px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    /* ===== EMPTY STATE ===== */
+    .empty-state {
+      text-align: center; padding: 60px 24px;
+      color: var(--text-dim);
+    }
+    .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+    .empty-state h3 { font-size: 18px; color: var(--text-muted); font-weight: 600; }
+    .empty-state p { font-size: 14px; margin-top: 6px; }
+
+    /* ===== LOADER ===== */
+    .loader {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-overlay {
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px; gap: 14px; color: var(--text-muted); font-size: 14px;
+    }
+
+    /* ===== REJECT REASON BOX ===== */
+    .reject-reason {
+      font-size: 12px; color: var(--danger);
+      background: var(--danger-bg); border: 1px solid rgba(239,68,68,0.2);
+      border-radius: 6px; padding: 6px 10px; margin-top: 6px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 640px) {
+      .navbar { padding: 0 16px; }
+      .main { padding: 20px 16px; }
+      .login-card { padding: 32px 24px; }
+      .section-header { padding: 14px 16px; }
+      .section-body { padding: 0 16px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================ NAVBAR -->
+<nav class="navbar">
+  <div style="display:flex;align-items:center;gap:16px">
+    <a class="navbar-brand" href="#">
+      <span class="logo-dot"></span> LABORA
+      <span style="font-size:12px;font-weight:400;color:var(--text-muted);margin-left:4px">Question Portal</span>
+    </a>
+    <a href="/" class="btn btn-ghost btn-xs" style="text-decoration:none;border-color:var(--border);" title="Return to main LABORA dashboard">
+      ← Dashboard
+    </a>
+  </div>
+  <div class="navbar-info" id="navbar-info" style="display:none">
+    <span id="nav-username">–</span>
+    <span class="role-badge" id="nav-role-badge"></span>
+    <button class="btn-logout" onclick="logout()">Sign out</button>
+  </div>
+</nav>
+
+<!-- ============================================================ LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-title">Welcome back 👋</div>
+    <div class="login-subtitle">Sign in with your LABORA credentials</div>
+    <form onsubmit="doLogin(event)">
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input class="form-control" id="login-username" type="text" autocomplete="username" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-control" id="login-password" type="password" autocomplete="current-password" required />
+      </div>
+      <div id="login-error" style="color:var(--danger);font-size:13px;margin-bottom:14px;display:none"></div>
+      <button class="btn btn-primary btn-full" type="submit" id="login-btn">
+        <span id="login-btn-text">Sign in</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================================ APP -->
+<div id="app" style="display:none">
+  <div class="main">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Question Portal</div>
+        <div class="page-subtitle" id="app-subtitle">Select a subject to manage or view questions</div>
+      </div>
+      <button class="btn btn-primary" id="btn-add-section" onclick="toggleAddSection()" style="display:none">
+        ＋ New Section
+      </button>
+    </div>
+
+    <!-- Subject selector -->
+    <div class="subject-select-row">
+      <label for="subject-select">Subject</label>
+      <select class="form-control" id="subject-select" onchange="onSubjectChange()">
+        <option value="">– choose a subject –</option>
+      </select>
+    </div>
+
+    <!-- Add section panel (teacher only) -->
+    <div class="add-section-panel" id="add-section-panel">
+      <h3>Create New Section</h3>
+      <div class="form-row">
+        <div class="form-group" style="flex:0 0 100px">
+          <label class="form-label">Section No.</label>
+          <input class="form-control" id="ns-number" type="number" min="1" placeholder="1" />
+        </div>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Title</label>
+          <input class="form-control" id="ns-title" type="text" placeholder="e.g. Data Types and Variables" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description (optional)</label>
+        <textarea class="form-control" id="ns-desc" placeholder="Brief description of this section…"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn btn-primary" onclick="createSection()">Create Section</button>
+        <button class="btn btn-ghost" onclick="toggleAddSection()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Sections list -->
+    <div id="sections-container">
+      <div class="loading-overlay" id="sections-loader" style="display:none">
+        <div class="loader"></div> Loading sections…
+      </div>
+      <div class="sections-grid" id="sections-grid"></div>
+      <div class="empty-state" id="sections-empty" style="display:none">
+        <div class="icon">📂</div>
+        <h3>No sections yet</h3>
+        <p id="empty-hint">Select a subject to get started.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ REJECT MODAL -->
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal">
+    <h3 id="reject-modal-title">Reject</h3>
+    <div class="form-group">
+      <label class="form-label">Reason (optional)</label>
+      <textarea class="form-control" id="reject-reason" placeholder="Explain the reason for rejection…"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeRejectModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmReject()">Confirm Reject</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ EDIT SECTION MODAL -->
+<div class="modal-overlay" id="edit-section-modal">
+  <div class="modal">
+    <h3>Edit Section</h3>
+    <input type="hidden" id="edit-section-id" />
+    <div class="form-row">
+      <div class="form-group" style="flex:0 0 100px">
+        <label class="form-label">Section No.</label>
+        <input class="form-control" id="edit-sec-number" type="number" min="1" />
+      </div>
+      <div class="form-group" style="flex:1">
+        <label class="form-label">Title</label>
+        <input class="form-control" id="edit-sec-title" type="text" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-control" id="edit-sec-desc"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEditSectionModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditSection()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ EDIT QUESTION MODAL -->
+<div class="modal-overlay" id="edit-question-modal">
+  <div class="modal">
+    <h3>Edit Question</h3>
+    <input type="hidden" id="edit-q-id" />
+    <div class="form-row">
+      <div class="form-group" style="flex:0 0 90px">
+        <label class="form-label">Q. No.</label>
+        <input class="form-control" id="edit-q-no" type="number" min="1" />
+      </div>
+      <div class="form-group" style="flex:0 0 90px">
+        <label class="form-label">Marks</label>
+        <input class="form-control" id="edit-q-marks" type="number" min="0" />
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Question Text</label>
+      <textarea class="form-control" id="edit-q-text" style="min-height:120px"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeEditQuestionModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditQuestion()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ TOAST -->
+<div id="toast-container"></div>
+
+<script>
+// ================================================================
+// STATE
+// ================================================================
+function getStoredToken() {
+  try {
+    const raw = sessionStorage.getItem('labora.tokens');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.access) return parsed.access;
+    }
+  } catch (e) {}
+  return localStorage.getItem('labora_access') || '';
+}
+
+let token = getStoredToken();
+let currentUser = null;
+let subjects = [];
+let rejectTarget = null; // {type:'section'|'question', id}
+
+// ================================================================
+// API
+// ================================================================
+const API = '/api';
+
+async function apiFetch(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const res = await fetch(API + path, { ...opts, headers: { ...headers, ...(opts.headers || {}) } });
+  if (res.status === 204) return null;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = data.detail || (typeof data === 'object' ? JSON.stringify(data) : 'Request failed');
+    throw new Error(msg);
+  }
+  return data;
+}
+
+// ================================================================
+// AUTH
+// ================================================================
+async function doLogin(e) {
+  e.preventDefault();
+  const btn = document.getElementById('login-btn');
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  document.getElementById('login-btn-text').innerHTML = '<span class="loader"></span>';
+  try {
+    const data = await apiFetch('/auth/login/', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: document.getElementById('login-username').value,
+        password: document.getElementById('login-password').value,
+      }),
+    });
+    token = data.access;
+    localStorage.setItem('labora_access', token);
+    localStorage.setItem('labora_refresh', data.refresh);
+    try {
+      sessionStorage.setItem('labora.tokens', JSON.stringify({ access: data.access, refresh: data.refresh, user: data.user }));
+    } catch (e) {}
+    currentUser = data.user;
+    showApp();
+  } catch (err) {
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    document.getElementById('login-btn-text').textContent = 'Sign in';
+  }
+}
+
+async function tryAutoLogin() {
+  if (!token) return false;
+  try {
+    currentUser = await apiFetch('/auth/me/');
+    return true;
+  } catch {
+    token = '';
+    localStorage.removeItem('labora_access');
+    return false;
+  }
+}
+
+function logout() {
+  token = '';
+  currentUser = null;
+  subjects = [];
+  localStorage.removeItem('labora_access');
+  localStorage.removeItem('labora_refresh');
+  try { sessionStorage.removeItem('labora.tokens'); } catch (e) {}
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('navbar-info').style.display = 'none';
+  document.getElementById('sections-grid').innerHTML = '';
+  document.getElementById('subject-select').innerHTML = '<option value="">– choose a subject –</option>';
+}
+
+// ================================================================
+// APP INIT
+// ================================================================
+async function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+
+  const info = document.getElementById('navbar-info');
+  info.style.display = 'flex';
+  document.getElementById('nav-username').textContent =
+    (currentUser.first_name ? currentUser.first_name + ' ' + currentUser.last_name : currentUser.username).trim() || currentUser.username;
+
+  const badge = document.getElementById('nav-role-badge');
+  badge.textContent = currentUser.role;
+  badge.className = 'role-badge ' + (currentUser.role === 'admin' ? 'admin' : currentUser.role === 'teacher' ? 'teacher' : 'student');
+
+  const isTeacher = currentUser.role === 'teacher' || currentUser.role === 'admin';
+  document.getElementById('btn-add-section').style.display = isTeacher ? 'inline-flex' : 'none';
+
+  await loadSubjects();
+}
+
+async function loadSubjects() {
+  try {
+    const data = await apiFetch('/subjects/');
+    subjects = data.results || data;
+    const sel = document.getElementById('subject-select');
+    sel.innerHTML = '<option value="">– choose a subject –</option>';
+    subjects.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.id;
+      opt.textContent = `${s.code} – ${s.name}`;
+      sel.appendChild(opt);
+    });
+  } catch (err) {
+    showToast('Failed to load subjects: ' + err.message, 'error');
+  }
+}
+
+function onSubjectChange() {
+  const subjectId = document.getElementById('subject-select').value;
+  if (!subjectId) {
+    document.getElementById('sections-grid').innerHTML = '';
+    document.getElementById('sections-empty').style.display = 'block';
+    document.getElementById('sections-empty').querySelector('#empty-hint').textContent = 'Select a subject to get started.';
+    return;
+  }
+  loadSections(subjectId);
+}
+
+// ================================================================
+// SECTIONS
+// ================================================================
+async function loadSections(subjectId) {
+  document.getElementById('sections-loader').style.display = 'flex';
+  document.getElementById('sections-grid').innerHTML = '';
+  document.getElementById('sections-empty').style.display = 'none';
+
+  try {
+    const data = await apiFetch(`/question-sections/?subject=${subjectId}`);
+    const sections = data.results || data;
+    document.getElementById('sections-loader').style.display = 'none';
+
+    if (!sections.length) {
+      document.getElementById('sections-empty').style.display = 'block';
+      const isTeacher = currentUser.role === 'teacher' || currentUser.role === 'admin';
+      document.getElementById('empty-hint').textContent = isTeacher
+        ? 'No sections yet. Click "New Section" to create one.'
+        : 'No sections are available for this subject yet.';
+      return;
+    }
+    renderSections(sections);
+  } catch (err) {
+    document.getElementById('sections-loader').style.display = 'none';
+    showToast('Error loading sections: ' + err.message, 'error');
+  }
+}
+
+function renderSections(sections) {
+  const grid = document.getElementById('sections-grid');
+  grid.innerHTML = '';
+  const isTeacher = currentUser.role === 'teacher' || currentUser.role === 'admin';
+  sections.forEach(sec => {
+    const card = document.createElement('div');
+    card.className = `section-card ${sec.status}`;
+    card.id = `section-card-${sec.id}`;
+    card.innerHTML = buildSectionCard(sec, isTeacher);
+    grid.appendChild(card);
+  });
+}
+
+function buildSectionCard(sec, isTeacher) {
+  const badgeHtml = `<span class="badge badge-${sec.status}">${sec.status_label}</span>`;
+  const qCount = sec.question_count || 0;
+  const allApproved = sec.all_questions_approved;
+
+  let headerActions = badgeHtml;
+  if (isTeacher) {
+    headerActions += `
+      <button class="btn btn-ghost btn-sm" onclick="openEditSection(event,${sec.id})" title="Edit section">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteSection(event,${sec.id})" title="Delete section">🗑</button>`;
+  }
+
+  let sectionActions = '';
+  if (isTeacher) {
+    const canApprove = allApproved && qCount > 0;
+    sectionActions = `
+      <div class="section-action-bar">
+        <div class="left">
+          <button class="btn btn-primary btn-sm" onclick="toggleAddQuestion(${sec.id})">＋ Add Question</button>
+        </div>
+        <div class="right">
+          ${!canApprove && sec.status !== 'approved' ? `<span class="approval-hint">⚠ Approve all questions first</span>` : ''}
+          <button class="btn btn-success btn-sm" ${canApprove || sec.status === 'approved' ? '' : 'disabled'}
+            onclick="approveSection(${sec.id})" title="${canApprove ? 'Approve section' : 'All questions must be approved first'}">
+            ✓ Approve Section
+          </button>
+          <button class="btn btn-danger btn-sm" onclick="rejectSection(${sec.id})">✗ Reject Section</button>
+          ${sec.status !== 'pending' ? `<button class="btn btn-ghost btn-sm" onclick="resetSection(${sec.id})">↺ Reset</button>` : ''}
+        </div>
+      </div>`;
+  }
+
+  let downloadBar = '';
+  if (!isTeacher && sec.status === 'approved') {
+    downloadBar = `
+      <div class="download-bar">
+        <div class="label">Section Approved ✓
+          <small>Download all ${qCount} question${qCount!==1?'s':''} in this section</small>
+        </div>
+        <div class="download-btn-group">
+          <button class="btn btn-success btn-sm" onclick="downloadSection(${sec.id},'pdf')">⬇ PDF</button>
+          <button class="btn btn-ghost btn-sm"   onclick="downloadSection(${sec.id},'docx')">⬇ Word (.docx)</button>
+        </div>
+      </div>`;
+  } else if (isTeacher && sec.status === 'approved') {
+    downloadBar = `
+      <div class="download-bar" style="background:rgba(99,102,241,0.08);border-color:rgba(99,102,241,0.25)">
+        <div class="label" style="color:#a5b4fc">Section Approved ✓
+          <small>Download all ${qCount} question${qCount!==1?'s':''} (Teacher preview)</small>
+        </div>
+        <div class="download-btn-group">
+          <button class="btn btn-primary btn-sm" onclick="downloadSection(${sec.id},'pdf')">⬇ PDF</button>
+          <button class="btn btn-ghost btn-sm"   onclick="downloadSection(${sec.id},'docx')">⬇ Word (.docx)</button>
+        </div>
+      </div>`;
+  }
+
+  let rejectInfo = '';
+  if (sec.status === 'rejected' && sec.rejection_reason) {
+    rejectInfo = `<div class="reject-reason">Rejected: ${esc(sec.rejection_reason)}</div>`;
+  }
+
+  const questionsHtml = buildQuestionsTable(sec, isTeacher);
+
+  return `
+    <div class="section-header" onclick="toggleSection(${sec.id})">
+      <div class="section-header-left">
+        <div class="section-number">${sec.section_number}</div>
+        <div>
+          <div class="section-title-text">${esc(sec.title)}</div>
+          <div class="section-meta">${qCount} question${qCount!==1?'s':''} · Subject: ${esc(sec.subject_code)}</div>
+        </div>
+      </div>
+      <div class="section-header-right">
+        ${headerActions}
+        <span class="collapse-icon">⌄</span>
+      </div>
+    </div>
+    <div class="section-body" id="section-body-${sec.id}">
+      ${rejectInfo}
+      ${sectionActions}
+      <div id="questions-area-${sec.id}">
+        ${questionsHtml}
+      </div>
+      ${downloadBar}
+      <div class="add-question-panel" id="add-q-panel-${sec.id}" style="display:none">
+        <h4>Add New Question to Section ${sec.section_number}</h4>
+        <div class="form-row">
+          <div class="form-group" style="flex:0 0 90px">
+            <label class="form-label">Q. No.</label>
+            <input class="form-control" id="nq-no-${sec.id}" type="number" min="1" placeholder="${qCount+1}" />
+          </div>
+          <div class="form-group" style="flex:0 0 90px">
+            <label class="form-label">Marks</label>
+            <input class="form-control" id="nq-marks-${sec.id}" type="number" min="0" placeholder="5" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Question Text</label>
+          <textarea class="form-control" id="nq-text-${sec.id}" style="min-height:100px" placeholder="Enter the full question text here…"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:4px">
+          <button class="btn btn-primary btn-sm" onclick="addQuestion(${sec.id})">Add Question</button>
+          <button class="btn btn-ghost btn-sm" onclick="toggleAddQuestion(${sec.id})">Cancel</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function buildQuestionsTable(sec, isTeacher) {
+  const questions = sec.questions || [];
+  if (!questions.length) {
+    return `<p style="color:var(--text-dim);font-size:13px;padding:12px 0;">No questions yet${isTeacher ? ' — click "Add Question" to add one.' : '.'}</p>`;
+  }
+  const rows = questions.map(q => buildQuestionRow(q, isTeacher, sec.id)).join('');
+  return `
+    <table class="questions-table ${isTeacher ? '' : 'student-view'}">
+      <thead>
+        <tr>
+          <th class="q-no">Q#</th>
+          <th>Question</th>
+          <th class="q-marks">Marks</th>
+          <th class="q-status">Status</th>
+          ${isTeacher ? '<th class="q-actions">Actions</th>' : ''}
+        </tr>
+      </thead>
+      <tbody id="questions-tbody-${sec.id}">${rows}</tbody>
+    </table>`;
+}
+
+function buildQuestionRow(q, isTeacher, secId) {
+  const statusBadge = `<span class="badge badge-${q.status}">${q.status_label}</span>`;
+  let rejectHint = '';
+  if (q.status === 'rejected' && q.rejection_reason) {
+    rejectHint = `<div class="reject-reason" style="margin-top:4px">${esc(q.rejection_reason)}</div>`;
+  }
+  let actions = '';
+  if (isTeacher) {
+    actions = `
+      <td class="q-actions">
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-success btn-xs" onclick="approveQuestion(${q.id},${secId})" ${q.status==='approved'?'disabled':''}>✓</button>
+          <button class="btn btn-danger btn-xs"  onclick="rejectQuestion(${q.id},${secId})"  ${q.status==='rejected'?'disabled':''}>✗</button>
+          <button class="btn btn-ghost btn-xs"   onclick="openEditQuestion(${q.id})"        title="Edit">✏️</button>
+          <button class="btn btn-ghost btn-xs"   onclick="deleteQuestion(${q.id},${secId})" title="Delete">🗑</button>
+        </div>
+      </td>`;
+  }
+  return `
+    <tr id="question-row-${q.id}">
+      <td class="q-no">${q.question_no}</td>
+      <td><div class="q-text">${esc(q.text)}</div>${rejectHint}</td>
+      <td class="q-marks">${q.marks || '–'}</td>
+      <td class="q-status">${statusBadge}</td>
+      ${actions}
+    </tr>`;
+}
+
+// ================================================================
+// SECTION INTERACTIONS
+// ================================================================
+function toggleSection(id) {
+  const card = document.getElementById(`section-card-${id}`);
+  card.classList.toggle('open');
+}
+
+function toggleAddSection() {
+  const panel = document.getElementById('add-section-panel');
+  panel.classList.toggle('visible');
+}
+
+async function createSection() {
+  const subjectId = document.getElementById('subject-select').value;
+  if (!subjectId) return showToast('Select a subject first.', 'error');
+  const number = document.getElementById('ns-number').value;
+  const title  = document.getElementById('ns-title').value.trim();
+  const desc   = document.getElementById('ns-desc').value.trim();
+  if (!number || !title) return showToast('Section number and title are required.', 'error');
+  try {
+    await apiFetch('/question-sections/', {
+      method: 'POST',
+      body: JSON.stringify({ subject: parseInt(subjectId), section_number: parseInt(number), title, description: desc }),
+    });
+    document.getElementById('ns-number').value = '';
+    document.getElementById('ns-title').value = '';
+    document.getElementById('ns-desc').value = '';
+    toggleAddSection();
+    showToast('Section created!', 'success');
+    loadSections(subjectId);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function deleteSection(e, id) {
+  e.stopPropagation();
+  if (!confirm('Delete this section and all its questions?')) return;
+  try {
+    await apiFetch(`/question-sections/${id}/`, { method: 'DELETE' });
+    showToast('Section deleted.', 'info');
+    const subjectId = document.getElementById('subject-select').value;
+    loadSections(subjectId);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+function openEditSection(e, id) {
+  e.stopPropagation();
+  const subjectId = document.getElementById('subject-select').value;
+  apiFetch(`/question-sections/${id}/`).then(sec => {
+    document.getElementById('edit-section-id').value = id;
+    document.getElementById('edit-sec-number').value = sec.section_number;
+    document.getElementById('edit-sec-title').value  = sec.title;
+    document.getElementById('edit-sec-desc').value   = sec.description || '';
+    document.getElementById('edit-section-modal').classList.add('visible');
+  }).catch(err => showToast(err.message, 'error'));
+}
+
+function closeEditSectionModal() { document.getElementById('edit-section-modal').classList.remove('visible'); }
+
+async function saveEditSection() {
+  const id     = document.getElementById('edit-section-id').value;
+  const number = document.getElementById('edit-sec-number').value;
+  const title  = document.getElementById('edit-sec-title').value.trim();
+  const desc   = document.getElementById('edit-sec-desc').value.trim();
+  try {
+    await apiFetch(`/question-sections/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ section_number: parseInt(number), title, description: desc }),
+    });
+    closeEditSectionModal();
+    showToast('Section updated!', 'success');
+    const subjectId = document.getElementById('subject-select').value;
+    loadSections(subjectId);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function approveSection(id) {
+  try {
+    await apiFetch(`/question-sections/${id}/approve/`, { method: 'POST' });
+    showToast('Section approved! Students can now download it.', 'success');
+    const subjectId = document.getElementById('subject-select').value;
+    loadSections(subjectId);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+function rejectSection(id) {
+  rejectTarget = { type: 'section', id };
+  document.getElementById('reject-modal-title').textContent = 'Reject Section';
+  document.getElementById('reject-reason').value = '';
+  document.getElementById('reject-modal').classList.add('visible');
+}
+
+async function resetSection(id) {
+  try {
+    await apiFetch(`/question-sections/${id}/reset/`, { method: 'POST' });
+    showToast('Section reset to pending.', 'info');
+    const subjectId = document.getElementById('subject-select').value;
+    loadSections(subjectId);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+// ================================================================
+// QUESTION INTERACTIONS
+// ================================================================
+function toggleAddQuestion(sectionId) {
+  const panel = document.getElementById(`add-q-panel-${sectionId}`);
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  if (panel.style.display === 'block') panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+async function addQuestion(sectionId) {
+  const no    = document.getElementById(`nq-no-${sectionId}`).value;
+  const marks = document.getElementById(`nq-marks-${sectionId}`).value;
+  const text  = document.getElementById(`nq-text-${sectionId}`).value.trim();
+  if (!no || !text) return showToast('Question number and text are required.', 'error');
+  try {
+    await apiFetch('/questions/', {
+      method: 'POST',
+      body: JSON.stringify({ section: sectionId, question_no: parseInt(no), text, marks: parseInt(marks) || 0 }),
+    });
+    document.getElementById(`nq-no-${sectionId}`).value = '';
+    document.getElementById(`nq-marks-${sectionId}`).value = '';
+    document.getElementById(`nq-text-${sectionId}`).value = '';
+    showToast('Question added!', 'success');
+    const subjectId = document.getElementById('subject-select').value;
+    loadSections(subjectId);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function approveQuestion(qId, secId) {
+  try {
+    await apiFetch(`/questions/${qId}/approve/`, { method: 'POST' });
+    showToast('Question approved!', 'success');
+    const subjectId = document.getElementById('subject-select').value;
+    loadSections(subjectId);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+function rejectQuestion(qId, secId) {
+  rejectTarget = { type: 'question', id: qId, secId };
+  document.getElementById('reject-modal-title').textContent = 'Reject Question';
+  document.getElementById('reject-reason').value = '';
+  document.getElementById('reject-modal').classList.add('visible');
+}
+
+function closeRejectModal() {
+  document.getElementById('reject-modal').classList.remove('visible');
+  rejectTarget = null;
+}
+
+async function confirmReject() {
+  if (!rejectTarget) return;
+  const reason = document.getElementById('reject-reason').value.trim();
+  try {
+    const url = rejectTarget.type === 'section'
+      ? `/question-sections/${rejectTarget.id}/reject/`
+      : `/questions/${rejectTarget.id}/reject/`;
+    await apiFetch(url, { method: 'POST', body: JSON.stringify({ reason }) });
+    closeRejectModal();
+    showToast('Rejected.', 'info');
+    const subjectId = document.getElementById('subject-select').value;
+    loadSections(subjectId);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+async function deleteQuestion(qId, secId) {
+  if (!confirm('Delete this question?')) return;
+  try {
+    await apiFetch(`/questions/${qId}/`, { method: 'DELETE' });
+    showToast('Question deleted.', 'info');
+    const subjectId = document.getElementById('subject-select').value;
+    loadSections(subjectId);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+let editQData = null;
+function openEditQuestion(qId) {
+  apiFetch(`/questions/${qId}/`).then(q => {
+    editQData = q;
+    document.getElementById('edit-q-id').value    = q.id;
+    document.getElementById('edit-q-no').value    = q.question_no;
+    document.getElementById('edit-q-marks').value = q.marks;
+    document.getElementById('edit-q-text').value  = q.text;
+    document.getElementById('edit-question-modal').classList.add('visible');
+  }).catch(err => showToast(err.message, 'error'));
+}
+
+function closeEditQuestionModal() { document.getElementById('edit-question-modal').classList.remove('visible'); }
+
+async function saveEditQuestion() {
+  const id    = document.getElementById('edit-q-id').value;
+  const no    = document.getElementById('edit-q-no').value;
+  const marks = document.getElementById('edit-q-marks').value;
+  const text  = document.getElementById('edit-q-text').value.trim();
+  try {
+    await apiFetch(`/questions/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify({ question_no: parseInt(no), marks: parseInt(marks) || 0, text }),
+    });
+    closeEditQuestionModal();
+    showToast('Question updated!', 'success');
+    const subjectId = document.getElementById('subject-select').value;
+    loadSections(subjectId);
+  } catch (err) { showToast(err.message, 'error'); }
+}
+
+// ================================================================
+// DOWNLOAD
+// ================================================================
+async function downloadSection(id, type) {
+  showToast(`Preparing ${type.toUpperCase()} download…`, 'info');
+  try {
+    const headers = { 'Authorization': 'Bearer ' + token };
+    const res = await fetch(`/api/question-sections/${id}/download/?type=${type}`, { headers });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.detail || 'Download failed');
+    }
+    const blob = await res.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    const disp = res.headers.get('Content-Disposition') || '';
+    const match= disp.match(/filename="(.+)"/);
+    a.download = match ? match[1] : `section_${id}.${type}`;
+    a.href = url;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Download started!', 'success');
+  } catch (err) { showToast('Download error: ' + err.message, 'error'); }
+}
+
+// ================================================================
+// UTILITIES
+// ================================================================
+function esc(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg, type = 'info', duration = 4000) {
+  const container = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+  t.innerHTML = `<span>${icon}</span><span>${msg}</span>`;
+  container.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(() => t.remove(), 300); }, duration);
+}
+
+// ================================================================
+// BOOT
+// ================================================================
+(async function boot() {
+  // Try to use token already stored from the main LABORA React app
+  const ok = await tryAutoLogin();
+  if (ok) {
+    showApp();
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+  }
+})();
+</script>
+</body>
+</html>

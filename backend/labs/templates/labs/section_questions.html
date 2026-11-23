@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm 20mm;
+  }
+  body {
+    font-family: "Times New Roman", serif;
+    font-size: 12pt;
+    color: #111;
+  }
+  .center { text-align: center; }
+  .right  { text-align: right; }
+  .college-name {
+    font-size: 16pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    margin: 4px 0;
+    text-align: center;
+  }
+  .subject-line {
+    font-size: 13pt;
+    font-weight: bold;
+    text-align: center;
+    margin: 8px 0 4px;
+  }
+  .section-title {
+    font-size: 15pt;
+    font-weight: bold;
+    text-align: center;
+    margin: 6px 0 4px;
+    letter-spacing: 0.5px;
+  }
+  .description {
+    font-style: italic;
+    color: #444;
+    text-align: center;
+    margin: 4px 0 16px;
+  }
+  .divider {
+    border-top: 2px solid #333;
+    margin: 12px 0;
+  }
+  table {
+    width: 100%;
+    margin-top: 16px;
+  }
+  td, th {
+    border: 1px solid #333;
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #eeeeee;
+    font-weight: bold;
+  }
+  .col-qno   { width: 8%;  text-align: center; }
+  .col-marks { width: 10%; text-align: center; }
+  .q-text {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+  }
+  .footer-table {
+    width: 100%;
+    border: none;
+    margin-top: 32px;
+    font-size: 10pt;
+    color: #555;
+  }
+  .footer-table td { border: none; padding: 0; }
+  img.logo {
+    height: 70px;
+    display: block;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+
+  {% if logo_path %}
+  <div class="center">
+    <img class="logo" src="file://{{ logo_path }}">
+  </div>
+  {% endif %}
+
+  <div class="college-name">{{ college.college_name }}</div>
+  {% if college.college_address %}
+  <div class="center">{{ college.college_address }}</div>
+  {% endif %}
+
+  <div class="divider"></div>
+
+  <div class="subject-line">{{ section.subject_code }} &ndash; {{ section.subject_name }}</div>
+  <div class="section-title">Section {{ section.number }}: {{ section.title }}</div>
+  {% if section.description %}
+  <div class="description">{{ section.description }}</div>
+  {% endif %}
+
+  <table>
+    <tr>
+      <th class="col-qno">Q.No</th>
+      <th>Question</th>
+      <th class="col-marks">Marks</th>
+    </tr>
+    {% for q in questions %}
+    <tr>
+      <td class="col-qno">{{ q.question_no }}</td>
+      <td class="q-text">{{ q.text }}</td>
+      <td class="col-marks">{% if q.marks %}{{ q.marks }}{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </table>
+
+  <table class="footer-table">
+    <tr>
+      <td>
+        Approved by: {{ section.approved_by }}
+        {% if section.approved_at %}&nbsp;|&nbsp;Date: {{ section.approved_at }}{% endif %}
+      </td>
+      <td class="right">Generated: {{ generated_at }}</td>
+    </tr>
+  </table>
+
+</body>
+</html>
